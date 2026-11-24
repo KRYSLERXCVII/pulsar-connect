@@ -4,6 +4,7 @@ import android.annotation.SuppressLint
 import android.bluetooth.*
 import android.bluetooth.le.*
 import android.content.Context
+import android.os.Build
 import android.os.Handler
 import android.os.Looper
 
@@ -24,9 +25,32 @@ class N250BleProbe(
     private val scanCallback = object : ScanCallback() {
         override fun onScanResult(type: Int, result: ScanResult) {
             val device = result.device
-            val name = device.name?.takeIf { it.isNotBlank() }
-                ?: result.scanRecord?.deviceName ?: "Unnamed BLE device"
-            handler.post { onDevice(NearbyBleDevice(name, device.address, result.rssi, device)) }
+            val record = result.scanRecord
+            val name = record?.deviceName?.takeIf { it.isNotBlank() }
+                ?: device.name?.takeIf { it.isNotBlank() }
+                ?: (if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) device.alias else null)?.takeIf { it.isNotBlank() }
+                ?: "BLE device • ${device.address.takeLast(5)}"
+
+            val details = buildList {
+                if (record?.deviceName.isNullOrBlank() && device.name.isNullOrBlank()) {
+                    add("Name not advertised")
+                }
+                record?.manufacturerSpecificData?.let { data ->
+                    if (data.size() > 0) {
+                        val ids = (0 until data.size()).map { index ->
+                            "0x%04X".format(data.keyAt(index))
+                        }
+                        add("Manufacturer ID: ${ids.joinToString()}")
+                    }
+                }
+                record?.serviceUuids?.takeIf { it.isNotEmpty() }?.let { uuids ->
+                    add("${uuids.size} advertised service(s)")
+                }
+            }.joinToString(" • ")
+
+            handler.post {
+                onDevice(NearbyBleDevice(name, device.address, result.rssi, device, details))
+            }
         }
         override fun onScanFailed(errorCode: Int) {
             handler.post { onStatus("BLE scan failed: $errorCode") }
