@@ -14,7 +14,8 @@ class N250BleProbe(
     private val onDevice: (NearbyBleDevice) -> Unit,
     private val onGattReport: (List<String>) -> Unit
 ) {
-    private val adapter = (context.getSystemService(Context.BLUETOOTH_SERVICE) as BluetoothManager).adapter
+    private val appContext = context.applicationContext
+    private val adapter = (appContext.getSystemService(Context.BLUETOOTH_SERVICE) as BluetoothManager).adapter
     private val handler = Handler(Looper.getMainLooper())
     private var gatt: BluetoothGatt? = null
     private var scanning = false
@@ -119,8 +120,10 @@ class N250BleProbe(
         try {
             onStatus("Connecting to ${device.name}…")
             gatt = device.nativeDevice.connectGatt(
-                context = null, autoConnect = false, callback = gattCallback
+                appContext, false, gattCallback, BluetoothDevice.TRANSPORT_LE
             )
+        } catch (e: SecurityException) {
+            onStatus("Bluetooth connect permission missing: ${e.message}")
         } catch (e: Exception) {
             onStatus("Connect error: ${e.message}")
         }
