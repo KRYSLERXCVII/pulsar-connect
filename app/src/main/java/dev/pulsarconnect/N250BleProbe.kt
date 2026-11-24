@@ -4,6 +4,9 @@ import android.annotation.SuppressLint
 import android.bluetooth.*
 import android.bluetooth.le.*
 import android.content.Context
+import android.content.BroadcastReceiver
+import android.content.Intent
+import android.content.IntentFilter
 import android.os.Build
 import android.os.Handler
 import android.os.Looper
@@ -13,13 +16,27 @@ class N250BleProbe(
     context: Context,
     private val onStatus: (String) -> Unit,
     private val onDevice: (NearbyBleDevice) -> Unit,
-    private val onGattReport: (List<String>) -> Unit
+    private val onGattReport: (List<String>) -> Unit,
+    private val onDeviceName: (String, String) -> Unit
 ) {
     private val appContext = context.applicationContext
     private val adapter = (appContext.getSystemService(Context.BLUETOOTH_SERVICE) as BluetoothManager).adapter
     private val handler = Handler(Looper.getMainLooper())
     private var gatt: BluetoothGatt? = null
     private var scanning = false
+    private val knownClassicNames = mutableMapOf<String, String>()
+    private val classicDiscoveryReceiver = object : BroadcastReceiver() {
+        override fun onReceive(context: Context, intent: Intent) {
+            if (intent.action != BluetoothDevice.ACTION_FOUND) return
+            val foundDevice = intent.getParcelableExtra<BluetoothDevice>(BluetoothDevice.EXTRA_DEVICE) ?: return
+            val friendlyName = intent.getStringExtra(BluetoothDevice.EXTRA_NAME)
+                ?.takeIf { it.isNotBlank() }
+                ?: try { foundDevice.name?.takeIf { it.isNotBlank() } } catch (_: SecurityException) { null }
+                ?: return
+            knownClassicNames[foundDevice.address] = friendlyName
+            onDeviceName(foundDevice.address, friendlyName)
+        }
+    }
     private val stopRunnable = Runnable { stopScan() }
 
     private val scanCallback = object : ScanCallback() {
@@ -27,6 +44,7 @@ class N250BleProbe(
             val device = result.device
             val record = result.scanRecord
             val name = record?.deviceName?.takeIf { it.isNotBlank() }
+                ?: knownClassicNames[device.address]
                 ?: device.name?.takeIf { it.isNotBlank() }
                 ?: (if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) device.alias else null)?.takeIf { it.isNotBlank() }
                 ?: "BLE device • ${device.address.takeLast(5)}"
@@ -116,10 +134,18 @@ class N250BleProbe(
             return
         }
         try {
+            knownClassicNames.clear()
+            val filter = IntentFilter(BluetoothDevice.ACTION_FOUND)
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                appContext.registerReceiver(classicDiscoveryReceiver, filter, Context.RECEIVER_NOT_EXPORTED)
+            } else {
+                appContext.registerReceiver(classicDiscoveryReceiver, filter)
+            }
             scanner.startScan(null, ScanSettings.Builder()
                 .setScanMode(ScanSettings.SCAN_MODE_LOW_LATENCY).build(), scanCallback)
             scanning = true
-            onStatus("Scanning for 12 seconds…")
+            try { adapter?.cancelDiscovery(); adapter?.startDiscovery() } catch (_: SecurityException) { }
+            onStatus("Scanning nearby Bluetooth devices…")
             handler.removeCallbacks(stopRunnable)
             handler.postDelayed(stopRunnable, 12_000L)
         } catch (e: SecurityException) {
@@ -133,6 +159,11 @@ class N250BleProbe(
         handler.removeCallbacks(stopRunnable)
         if (!scanning) return
         try { adapter?.bluetoothLeScanner?.stopScan(scanCallback) }
+        catch (_: SecurityException) { }
+        try { if (adapter?.isDiscovering == true) adapter.cancelDiscovery() }
+        catch (_: SecurityException) { }
+        try { appContext.unregisterReceiver(classicDiscoveryReceiver) }
+        catch (_: IllegalArgumentException) { }
         catch (_: SecurityException) { }
         finally { scanning = false }
         onStatus("Scan stopped")
