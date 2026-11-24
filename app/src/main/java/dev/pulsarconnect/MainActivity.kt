@@ -60,6 +60,17 @@ class MainActivity : ComponentActivity() {
             onGattReport = { lines -> runOnUiThread {
                 gattLines.clear()
                 gattLines.addAll(lines)
+            } },
+            onDeviceName = { address, name -> runOnUiThread {
+                val index = devices.indexOfFirst { it.address == address }
+                if (index >= 0) {
+                    devices[index] = devices[index].copy(
+                        name = name,
+                        details = devices[index].details.split(" • ")
+                            .filterNot { it == "Name not advertised" }
+                            .joinToString(" • ")
+                    )
+                }
             } }
         )
         setContent {
