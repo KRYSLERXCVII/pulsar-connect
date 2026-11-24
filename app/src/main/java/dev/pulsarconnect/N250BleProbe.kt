@@ -17,7 +17,7 @@ class N250BleProbe(
     private val onStatus: (String) -> Unit,
     private val onDevice: (NearbyBleDevice) -> Unit,
     private val onGattReport: (List<String>) -> Unit,
-    private val onDeviceName: (String, String) -> Unit
+    private val onDeviceName: (BluetoothDevice, String, Int) -> Unit
 ) {
     private val appContext = context.applicationContext
     private val adapter = (appContext.getSystemService(Context.BLUETOOTH_SERVICE) as BluetoothManager).adapter
@@ -33,8 +33,10 @@ class N250BleProbe(
                 ?.takeIf { it.isNotBlank() }
                 ?: try { foundDevice.name?.takeIf { it.isNotBlank() } } catch (_: SecurityException) { null }
                 ?: return
-            knownClassicNames[foundDevice.address] = friendlyName
-            onDeviceName(foundDevice.address, friendlyName)
+            val address = foundDevice.address
+            val rssi = intent.getShortExtra(BluetoothDevice.EXTRA_RSSI, Short.MIN_VALUE).toInt()
+            knownClassicNames[address] = friendlyName
+            onDeviceName(foundDevice, friendlyName, rssi)
         }
     }
     private val stopRunnable = Runnable { stopScan() }
