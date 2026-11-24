@@ -253,6 +253,9 @@ class MainActivity : ComponentActivity() {
                                             Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(3.dp)) {
                                                 Text(device.name, fontWeight = FontWeight.SemiBold, fontSize = 15.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
                                                 Text(device.address, color = Muted, fontSize = 11.sp)
+                                                if (device.details.isNotBlank()) {
+                                                    Text(device.details, color = Muted, fontSize = 10.sp, maxLines = 2, overflow = TextOverflow.Ellipsis)
+                                                }
                                             }
                                             Text(
                                                 "${device.rssi} dBm",
