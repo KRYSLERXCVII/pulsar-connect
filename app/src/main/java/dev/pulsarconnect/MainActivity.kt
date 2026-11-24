@@ -118,8 +118,7 @@ class MainActivity : ComponentActivity() {
                                         Text("P", color = Color.White, fontSize = 25.sp, fontWeight = FontWeight.Black)
                                     }
                                     Column(verticalArrangement = Arrangement.spacedBy(1.dp)) {
-                                        Text("PULSAR CONNECT", fontSize = 13.sp, fontWeight = FontWeight.Bold, letterSpacing = 1.5.sp)
-                                        Text("N250 companion", fontSize = 12.sp, color = Muted)
+                                        Text("Pulsar Connect", fontSize = 16.sp, fontWeight = FontWeight.Bold)
                                     }
                                 }
                                 Box(
@@ -145,12 +144,6 @@ class MainActivity : ComponentActivity() {
                             }
                         }
 
-                        item {
-                            Column(verticalArrangement = Arrangement.spacedBy(7.dp)) {
-                                Text("Your ride.\nYour connection.", fontSize = 31.sp, lineHeight = 36.sp, fontWeight = FontWeight.Bold, letterSpacing = (-0.8).sp)
-                                Text("Connect to your motorcycle and inspect its Bluetooth interface.", color = Muted, fontSize = 14.sp, lineHeight = 20.sp)
-                            }
-                        }
 
                         item {
                             Card(
@@ -170,7 +163,6 @@ class MainActivity : ComponentActivity() {
                                         ) { Text("⌁", color = Accent, fontSize = 25.sp, fontWeight = FontWeight.Bold) }
                                         Column {
                                             Text("Bluetooth discovery", fontWeight = FontWeight.SemiBold, fontSize = 16.sp)
-                                            Text("Phase 1 · Read-only inspection", color = Muted, fontSize = 12.sp)
                                         }
                                     }
                                     Text(
@@ -222,7 +214,6 @@ class MainActivity : ComponentActivity() {
                                     Text("Nearby devices", fontSize = 19.sp, fontWeight = FontWeight.Bold)
                                     Text("${devices.size} device(s) discovered", color = Muted, fontSize = 12.sp)
                                 }
-                                Text("SORTED BY SIGNAL", color = Muted, fontSize = 9.sp, letterSpacing = 1.sp)
                             }
                         }
 
@@ -238,9 +229,8 @@ class MainActivity : ComponentActivity() {
                                         horizontalAlignment = Alignment.CenterHorizontally,
                                         verticalArrangement = Arrangement.spacedBy(8.dp)
                                     ) {
-                                        Text("⌕", fontSize = 30.sp, color = Muted)
-                                        Text("Nothing found yet", fontWeight = FontWeight.SemiBold)
-                                        Text("Start a scan with your motorcycle nearby and its Bluetooth enabled.", color = Muted, fontSize = 12.sp, lineHeight = 18.sp)
+                                        Text("No devices found", fontWeight = FontWeight.SemiBold)
+                                        Text("Tap scan to search nearby.", color = Muted, fontSize = 12.sp)
                                     }
                                 }
                             }
@@ -292,7 +282,6 @@ class MainActivity : ComponentActivity() {
                             ) {
                                 Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
                                     Text("GATT diagnostics", fontSize = 19.sp, fontWeight = FontWeight.Bold)
-                                    Text("Services, characteristics and properties", color = Muted, fontSize = 12.sp)
                                 }
                                 Box(
                                     modifier = Modifier.background(PanelRaised, CircleShape).padding(horizontal = 9.dp, vertical = 5.dp)
@@ -337,16 +326,6 @@ class MainActivity : ComponentActivity() {
                             }
                         }
 
-                        item {
-                            Text(
-                                "PULSAR CONNECT  •  EXPERIMENTAL BUILD 0.1.0\nNo vehicle commands are sent in this phase.",
-                                modifier = Modifier.fillMaxWidth().padding(top = 4.dp),
-                                color = Muted,
-                                fontSize = 10.sp,
-                                lineHeight = 16.sp,
-                                letterSpacing = 0.4.sp
-                            )
-                        }
                     }
                 }
             }
