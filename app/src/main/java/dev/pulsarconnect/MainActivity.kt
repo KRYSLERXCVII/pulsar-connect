@@ -61,16 +61,29 @@ class MainActivity : ComponentActivity() {
                 gattLines.clear()
                 gattLines.addAll(lines)
             } },
-            onDeviceName = { address, name -> runOnUiThread {
+            onDeviceName = { nativeDevice, name, rssi -> runOnUiThread {
+                val address = nativeDevice.address
                 val index = devices.indexOfFirst { it.address == address }
                 if (index >= 0) {
                     devices[index] = devices[index].copy(
                         name = name,
                         details = devices[index].details.split(" • ")
-                            .filterNot { it == "Name not advertised" }
+                            .filterNot { it == "Name not advertised" || it == "Classic Bluetooth discovery" }
+                            .plus("Classic Bluetooth discovery")
                             .joinToString(" • ")
                     )
+                } else {
+                    devices.add(
+                        NearbyBleDevice(
+                            name = name,
+                            address = address,
+                            rssi = if (rssi == Short.MIN_VALUE.toInt()) -100 else rssi,
+                            nativeDevice = nativeDevice,
+                            details = "Classic Bluetooth discovery"
+                        )
+                    )
                 }
+                devices.sortByDescending { it.rssi }
             } }
         )
         setContent {
