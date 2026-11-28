@@ -36,7 +36,9 @@ class N250BleProbe(
             val address = foundDevice.address
             val rssi = intent.getShortExtra(BluetoothDevice.EXTRA_RSSI, Short.MIN_VALUE).toInt()
             knownClassicNames[address] = friendlyName
-            onDeviceName(foundDevice, friendlyName, rssi)
+            val bluetoothClass = try { foundDevice.bluetoothClass } catch (_: SecurityException) { null }
+            val deviceType = BluetoothDeviceClassifier.fromBluetoothClass(bluetoothClass)
+            onDeviceName(foundDevice, friendlyName, rssi, deviceType)
         }
     }
     private val stopRunnable = Runnable { stopScan() }
@@ -51,6 +53,9 @@ class N250BleProbe(
                 ?: (if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) device.alias else null)?.takeIf { it.isNotBlank() }
                 ?: "BLE device • ${device.address.takeLast(5)}"
 
+            val advertisedType = BluetoothDeviceClassifier.fromAdvertisedServices(
+                record?.serviceUuids?.map { it.uuid.toString() }.orEmpty()
+            )
             val details = buildList {
                 if (record?.deviceName.isNullOrBlank() && device.name.isNullOrBlank()) {
                     add("Name not advertised")
@@ -69,7 +74,10 @@ class N250BleProbe(
             }.joinToString(" • ")
 
             handler.post {
-                onDevice(NearbyBleDevice(name, device.address, result.rssi, device, details))
+                val bluetoothClass = try { device.bluetoothClass } catch (_: SecurityException) { null }
+                val classicType = BluetoothDeviceClassifier.fromBluetoothClass(bluetoothClass)
+                val resolvedType = if (classicType != "Unknown device") classicType else advertisedType
+                onDevice(NearbyBleDevice(name, device.address, result.rssi, device, details, resolvedType))
             }
         }
         override fun onScanFailed(errorCode: Int) {
