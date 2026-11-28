@@ -7,5 +7,6 @@ data class NearbyBleDevice(
     val address: String,
     val rssi: Int,
     internal val nativeDevice: BluetoothDevice,
-    val details: String = ""
+    val details: String = "",
+    val deviceType: String = "Unknown device"
 )
