@@ -61,12 +61,13 @@ class MainActivity : ComponentActivity() {
                 gattLines.clear()
                 gattLines.addAll(lines)
             } },
-            onDeviceName = { nativeDevice, name, rssi -> runOnUiThread {
+            onDeviceName = { nativeDevice, name, rssi, deviceType -> runOnUiThread {
                 val address = nativeDevice.address
                 val index = devices.indexOfFirst { it.address == address }
                 if (index >= 0) {
                     devices[index] = devices[index].copy(
                         name = name,
+                        deviceType = if (deviceType != "Unknown device") deviceType else devices[index].deviceType,
                         details = devices[index].details.split(" • ")
                             .filterNot { it == "Name not advertised" || it == "Classic Bluetooth discovery" }
                             .plus("Classic Bluetooth discovery")
@@ -79,7 +80,8 @@ class MainActivity : ComponentActivity() {
                             address = address,
                             rssi = if (rssi == Short.MIN_VALUE.toInt()) -100 else rssi,
                             nativeDevice = nativeDevice,
-                            details = "Classic Bluetooth discovery"
+                            details = "Classic Bluetooth discovery",
+                            deviceType = deviceType
                         )
                     )
                 }
@@ -276,6 +278,7 @@ class MainActivity : ComponentActivity() {
                                         ) {
                                             Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(3.dp)) {
                                                 Text(device.name, fontWeight = FontWeight.SemiBold, fontSize = 15.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                                                Text(device.deviceType, color = Accent, fontSize = 11.sp, fontWeight = FontWeight.SemiBold)
                                                 Text(device.address, color = Muted, fontSize = 11.sp)
                                                 if (device.details.isNotBlank()) {
                                                     Text(device.details, color = Muted, fontSize = 10.sp, maxLines = 2, overflow = TextOverflow.Ellipsis)
